@@ -7,7 +7,7 @@ import { ApplyRequest, ApiResponse, ApplyResponse } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     const body: ApplyRequest = await request.json();
-    const { idToken, formData } = body;
+    const { idToken, formData, lineDisplayName } = body;
 
     // 1. idToken検証してuserId取得
     const userId = await verifyIdToken(idToken);
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       .from('applicants')
       .insert({
         user_id: userId,
+        line_display_name: lineDisplayName || null,
         stall_name: formData.stallName,
         representative_name: formData.representativeName,
         phone: formData.phone,

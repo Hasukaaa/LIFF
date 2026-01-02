@@ -26,6 +26,7 @@ export interface ApplicationFormData {
 export interface Applicant {
   id: string;
   user_id: string;
+  line_display_name: string | null;
   stall_name: string;
   representative_name: string;
   phone: string;
@@ -53,6 +54,7 @@ export interface ApiResponse<T = any> {
 export interface ApplyRequest {
   idToken: string;
   formData: ApplicationFormData;
+  lineDisplayName?: string;
 }
 
 // 応募APIレスポンス

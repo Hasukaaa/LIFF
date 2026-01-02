@@ -196,7 +196,7 @@ export default function AdminPage() {
   const exportCSV = () => {
     const headers = [
       'ID',
-      'LINE User ID',
+      'LINE表示名',
       '屋号',
       '代表者名',
       '電話',
@@ -213,7 +213,7 @@ export default function AdminPage() {
 
     const rows = filteredApplicants.map((a) => [
       a.id,
-      a.user_id,
+      a.line_display_name || '（不明）',
       a.stall_name,
       a.representative_name,
       a.phone,
@@ -406,7 +406,7 @@ export default function AdminPage() {
                     </th>
                     <th className="p-3 text-left">屋号</th>
                     <th className="p-3 text-left">代表者名</th>
-                    <th className="p-3 text-left">LINE User ID</th>
+                    <th className="p-3 text-left">LINE表示名</th>
                     <th className="p-3 text-left">電話</th>
                     <th className="p-3 text-left">カテゴリ</th>
                     <th className="p-3 text-left">応募日時</th>
@@ -434,7 +434,7 @@ export default function AdminPage() {
                         {applicant.stall_name}
                       </td>
                       <td className="p-3">{applicant.representative_name}</td>
-                      <td className="p-3 text-xs font-mono">{applicant.user_id}</td>
+                      <td className="p-3">{applicant.line_display_name || '（不明）'}</td>
                       <td className="p-3 text-sm">{applicant.phone}</td>
                       <td className="p-3 text-xs">
                         {applicant.categories.join('・')}
@@ -505,8 +505,8 @@ export default function AdminPage() {
                       <p className="text-sm font-mono">{selectedApplicant.id}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-600">LINE User ID</label>
-                      <p className="text-sm font-mono break-all">{selectedApplicant.user_id}</p>
+                      <label className="text-sm font-medium text-gray-600">LINE表示名</label>
+                      <p>{selectedApplicant.line_display_name || '（不明）'}</p>
                     </div>
                   </div>
 

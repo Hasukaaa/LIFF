@@ -241,7 +241,15 @@ export default function ApplyPage() {
           }),
         });
       } else {
-        // 新規応募モード
+        // 新規応募モード：LINE表示名を取得
+        let lineDisplayName = '';
+        try {
+          const profile = await liff.getProfile();
+          lineDisplayName = profile.displayName;
+        } catch (error) {
+          console.error('Failed to get profile:', error);
+        }
+
         response = await fetch('/api/apply', {
           method: 'POST',
           headers: {
@@ -250,6 +258,7 @@ export default function ApplyPage() {
           body: JSON.stringify({
             idToken,
             formData: submitData,
+            lineDisplayName,
           }),
         });
       }
