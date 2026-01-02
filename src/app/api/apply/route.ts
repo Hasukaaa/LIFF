@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { verifyIdToken } from '@/lib/line';
+import { verifyIdToken, sendApplicationConfirmation } from '@/lib/line';
 import { validateApplicationForm } from '@/lib/validation';
 import { ApplyRequest, ApiResponse, ApplyResponse } from '@/types';
 
@@ -57,7 +57,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. 成功レスポンス
+    // 4. 応募確認メッセージを送信
+    await sendApplicationConfirmation(userId, {
+      stallName: formData.stallName,
+      representativeName: formData.representativeName,
+      phone: formData.phone,
+      baseArea: formData.baseArea,
+      startedYm: formData.startedYm,
+      categories: formData.categories,
+      description: formData.description,
+      urls: formData.urls,
+      powerNeeded: formData.powerNeeded,
+      heatSource: formData.heatSource,
+    });
+
+    // 5. 成功レスポンス
     return NextResponse.json<ApiResponse<ApplyResponse>>({
       success: true,
       data: { applicationId: applicant.id },

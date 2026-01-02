@@ -115,40 +115,6 @@ export default function ApplyPage() {
     }
   };
 
-  // 辞退処理
-  const handleWithdraw = async () => {
-    if (!existingApplication) return;
-
-    if (!confirm('本当に辞退しますか？この操作は取り消せません。')) {
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-
-      const response = await fetch(`/api/admin/applicants/${existingApplication.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'rejected' }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('辞退しました');
-        // 再チェック
-        await checkExistingApplication();
-      } else {
-        alert('辞退に失敗しました');
-      }
-    } catch (error) {
-      console.error('Withdraw error:', error);
-      alert('辞退中にエラーが発生しました');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   // 編集モードに入る
   const handleStartEdit = () => {
     if (!existingApplication) return;
@@ -341,16 +307,11 @@ export default function ApplyPage() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-blue-800 text-sm">
-              応募済みです。内容の編集や辞退は下のボタンから行えます。
+              応募済みです。応募内容はLINEメッセージでもご確認いただけます。
             </p>
           </div>
 
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-600">応募ID</label>
-              <p className="font-mono text-sm">{existingApplication.id}</p>
-            </div>
-
             <div>
               <label className="text-sm font-medium text-gray-600">屋号/出店名</label>
               <p className="font-medium">{existingApplication.stall_name}</p>
@@ -367,6 +328,16 @@ export default function ApplyPage() {
             </div>
 
             <div>
+              <label className="text-sm font-medium text-gray-600">活動拠点</label>
+              <p>{BASE_AREAS.find(a => a.value === existingApplication.base_area)?.label}</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-600">事業開始時期</label>
+              <p>{existingApplication.started_ym}</p>
+            </div>
+
+            <div>
               <label className="text-sm font-medium text-gray-600">出店カテゴリ</label>
               <p>{existingApplication.categories.join('、')}</p>
             </div>
@@ -379,29 +350,23 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-600">ステータス</label>
-              <p className="mt-1">
-                {existingApplication.status === 'applied' && (
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                    応募済み（選考中）
-                  </span>
-                )}
-                {existingApplication.status === 'accepted' && (
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded text-sm">
-                    合格
-                  </span>
-                )}
-                {existingApplication.status === 'waitlisted' && (
-                  <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm">
-                    保留
-                  </span>
-                )}
-                {existingApplication.status === 'rejected' && (
-                  <span className="px-3 py-1 bg-red-100 text-red-800 rounded text-sm">
-                    不合格/辞退済み
-                  </span>
-                )}
-              </p>
+              <label className="text-sm font-medium text-gray-600">HP/SNS URL</label>
+              <div className="space-y-1">
+                {existingApplication.urls.map((url, index) => (
+                  <p key={index} className="text-sm text-blue-600 break-all">{url}</p>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-600">電源</label>
+                <p>{existingApplication.power_needed ? '必要' : '不要'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">火気・熱源</label>
+                <p>{existingApplication.heat_source ? '使用する' : '使用しない'}</p>
+              </div>
             </div>
 
             <div>
@@ -411,7 +376,7 @@ export default function ApplyPage() {
           </div>
 
           {existingApplication.status !== 'rejected' && (
-            <div className="mt-8 pt-6 border-t space-y-3">
+            <div className="mt-8 pt-6 border-t">
               <button
                 onClick={handleStartEdit}
                 disabled={isSubmitting}
@@ -419,15 +384,8 @@ export default function ApplyPage() {
               >
                 応募内容を編集
               </button>
-              <button
-                onClick={handleWithdraw}
-                disabled={isSubmitting}
-                className="w-full bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? '処理中...' : '辞退する'}
-              </button>
-              <p className="text-xs text-gray-500 text-center">
-                ※辞退すると再応募はできません
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                応募を辞退される場合は、お手数ですが公式LINEに直接メッセージをお送りください。
               </p>
             </div>
           )}
@@ -446,9 +404,9 @@ export default function ApplyPage() {
             ご応募ありがとうございます。
           </p>
           <p className="text-sm text-gray-600 mb-6">
-            選考結果はLINEメッセージにてご連絡いたします。
+            応募内容の確認メッセージをLINEで送信しました。
             <br />
-            しばらくお待ちください。
+            選考結果は追ってご連絡いたします。
           </p>
           <button
             onClick={() => {
