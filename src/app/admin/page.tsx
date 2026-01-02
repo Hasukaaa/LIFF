@@ -30,6 +30,8 @@ export default function AdminPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // ログイン処理
   const handleLogin = async (e: React.FormEvent) => {
@@ -163,6 +165,7 @@ export default function AdminPage() {
   const exportCSV = () => {
     const headers = [
       'ID',
+      'LINE User ID',
       '屋号',
       '代表者名',
       '電話',
@@ -179,6 +182,7 @@ export default function AdminPage() {
 
     const rows = filteredApplicants.map((a) => [
       a.id,
+      a.user_id,
       a.stall_name,
       a.representative_name,
       a.phone,
@@ -364,6 +368,7 @@ export default function AdminPage() {
                     </th>
                     <th className="p-3 text-left">屋号</th>
                     <th className="p-3 text-left">代表者名</th>
+                    <th className="p-3 text-left">LINE User ID</th>
                     <th className="p-3 text-left">電話</th>
                     <th className="p-3 text-left">カテゴリ</th>
                     <th className="p-3 text-left">応募日時</th>
@@ -381,8 +386,17 @@ export default function AdminPage() {
                           onChange={() => toggleSelection(applicant.id)}
                         />
                       </td>
-                      <td className="p-3">{applicant.stall_name}</td>
+                      <td
+                        className="p-3 cursor-pointer text-blue-600 hover:underline"
+                        onClick={() => {
+                          setSelectedApplicant(applicant);
+                          setShowDetailModal(true);
+                        }}
+                      >
+                        {applicant.stall_name}
+                      </td>
                       <td className="p-3">{applicant.representative_name}</td>
+                      <td className="p-3 text-xs font-mono">{applicant.user_id}</td>
                       <td className="p-3 text-sm">{applicant.phone}</td>
                       <td className="p-3 text-xs">
                         {applicant.categories.join('・')}
@@ -424,6 +438,147 @@ export default function AdminPage() {
         <div className="mt-4 text-center text-sm text-gray-500">
           全{filteredApplicants.length}件
         </div>
+
+        {/* 詳細モーダル */}
+        {showDetailModal && selectedApplicant && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDetailModal(false)}
+          >
+            <div
+              className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-2xl font-bold">応募詳細</h2>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">応募ID</label>
+                      <p className="text-sm font-mono">{selectedApplicant.id}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">LINE User ID</label>
+                      <p className="text-sm font-mono break-all">{selectedApplicant.user_id}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">屋号/出店名</label>
+                      <p className="font-medium">{selectedApplicant.stall_name}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">代表者氏名</label>
+                      <p className="font-medium">{selectedApplicant.representative_name}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">電話番号</label>
+                      <p>{selectedApplicant.phone}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">活動拠点</label>
+                      <p>{selectedApplicant.base_area}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">事業開始時期</label>
+                      <p>{selectedApplicant.started_ym}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">ステータス</label>
+                      <span
+                        className={`inline-block px-3 py-1 rounded text-sm ${
+                          STATUS_COLORS[selectedApplicant.status]
+                        }`}
+                      >
+                        {STATUS_LABELS[selectedApplicant.status]}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">出店カテゴリ</label>
+                    <p>{selectedApplicant.categories.join('、')}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">出店内容</label>
+                    <p className="whitespace-pre-wrap bg-gray-50 p-3 rounded">
+                      {selectedApplicant.description}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">HP/SNS URL</label>
+                    <div className="space-y-1">
+                      {selectedApplicant.urls.map((url, index) => (
+                        <a
+                          key={index}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-blue-600 hover:underline break-all"
+                        >
+                          {url}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">電源</label>
+                      <p>{selectedApplicant.power_needed ? '必要' : '不要'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">火気・熱源</label>
+                      <p>{selectedApplicant.heat_source ? '使用する' : '使用しない'}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">応募日時</label>
+                      <p className="text-sm">
+                        {new Date(selectedApplicant.created_at).toLocaleString('ja-JP')}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">規約同意日時</label>
+                      <p className="text-sm">
+                        {new Date(selectedApplicant.agreed_at).toLocaleString('ja-JP')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    閉じる
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
