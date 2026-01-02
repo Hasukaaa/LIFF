@@ -161,6 +161,37 @@ export default function AdminPage() {
     }
   };
 
+  // 落選通知送信
+  const sendRejectNotification = async () => {
+    if (selectedIds.size === 0) {
+      alert('送信対象を選択してください');
+      return;
+    }
+
+    if (!confirm(`${selectedIds.size}件の落選通知を送信しますか？`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/push-reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applicantIds: Array.from(selectedIds) }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setMessage(result.data.message);
+        setSelectedIds(new Set());
+        loadApplicants();
+        setTimeout(() => setMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('Push error:', error);
+    }
+  };
+
   // CSV エクスポート
   const exportCSV = () => {
     const headers = [
@@ -344,6 +375,13 @@ export default function AdminPage() {
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               合格通知を送信
+            </button>
+            <button
+              onClick={sendRejectNotification}
+              disabled={selectedIds.size === 0}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              落選通知を送信
             </button>
           </div>
         </div>

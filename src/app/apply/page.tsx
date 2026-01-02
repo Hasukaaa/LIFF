@@ -33,6 +33,7 @@ export default function ApplyPage() {
   const [isCheckingExisting, setIsCheckingExisting] = useState(true);
   const [isFriend, setIsFriend] = useState(false);
   const [friendshipChecked, setFriendshipChecked] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [formData, setFormData] = useState<ApplicationFormData>({
     stallName: '',
@@ -148,6 +149,34 @@ export default function ApplyPage() {
     }
   };
 
+  // 編集モードに入る
+  const handleStartEdit = () => {
+    if (!existingApplication) return;
+
+    // 既存データをフォームに読み込む
+    setFormData({
+      stallName: existingApplication.stall_name,
+      representativeName: existingApplication.representative_name,
+      phone: existingApplication.phone,
+      baseArea: existingApplication.base_area,
+      startedYm: existingApplication.started_ym,
+      categories: existingApplication.categories,
+      description: existingApplication.description,
+      urls: existingApplication.urls.length > 0 ? existingApplication.urls : [''],
+      powerNeeded: existingApplication.power_needed,
+      heatSource: existingApplication.heat_source,
+      agreed: true, // 既に同意済み
+    });
+
+    setIsEditMode(true);
+  };
+
+  // 編集キャンセル
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setErrors([]);
+  };
+
   const handleCategoryChange = (category: Category, checked: boolean) => {
     if (checked) {
       setFormData((prev) => ({
@@ -197,23 +226,47 @@ export default function ApplyPage() {
       const filteredUrls = formData.urls.filter((url) => url.trim() !== '');
       const submitData = { ...formData, urls: filteredUrls };
 
-      // API呼び出し
-      const response = await fetch('/api/apply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          idToken,
-          formData: submitData,
-        }),
-      });
+      let response;
+
+      if (isEditMode) {
+        // 編集モード：既存データを更新
+        response = await fetch('/api/my-application', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            formData: submitData,
+          }),
+        });
+      } else {
+        // 新規応募モード
+        response = await fetch('/api/apply', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            idToken,
+            formData: submitData,
+          }),
+        });
+      }
 
       const result = await response.json();
 
       if (result.success) {
-        setApplicationId(result.data.applicationId);
-        setSubmitted(true);
+        if (isEditMode) {
+          // 編集完了：応募一覧に戻る
+          alert('応募内容を更新しました');
+          setIsEditMode(false);
+          await checkExistingApplication();
+        } else {
+          // 新規応募完了
+          setApplicationId(result.data.applicationId);
+          setSubmitted(true);
+        }
       } else {
         setErrors([result.error || '送信に失敗しました']);
       }
@@ -270,8 +323,8 @@ export default function ApplyPage() {
     );
   }
 
-  // 既に応募済みの場合
-  if (existingApplication) {
+  // 既に応募済みの場合（編集モードでない場合）
+  if (existingApplication && !isEditMode) {
     return (
       <div className="min-h-screen bg-gray-50 py-8 px-4">
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
@@ -279,7 +332,7 @@ export default function ApplyPage() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-blue-800 text-sm">
-              すでに応募済みです。辞退する場合は下のボタンから手続きしてください。
+              応募済みです。内容の編集や辞退は下のボタンから行えます。
             </p>
           </div>
 
@@ -349,7 +402,14 @@ export default function ApplyPage() {
           </div>
 
           {existingApplication.status !== 'rejected' && (
-            <div className="mt-8 pt-6 border-t">
+            <div className="mt-8 pt-6 border-t space-y-3">
+              <button
+                onClick={handleStartEdit}
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                応募内容を編集
+              </button>
               <button
                 onClick={handleWithdraw}
                 disabled={isSubmitting}
@@ -357,7 +417,7 @@ export default function ApplyPage() {
               >
                 {isSubmitting ? '処理中...' : '辞退する'}
               </button>
-              <p className="text-xs text-gray-500 mt-2 text-center">
+              <p className="text-xs text-gray-500 text-center">
                 ※辞退すると再応募はできません
               </p>
             </div>
@@ -373,13 +433,22 @@ export default function ApplyPage() {
         <div className="bg-white rounded-lg shadow-md p-8 max-w-md text-center">
           <div className="text-green-600 text-5xl mb-4">✓</div>
           <h1 className="text-2xl font-bold mb-4">応募を受け付けました</h1>
-          <p className="text-gray-600 mb-2">受付番号</p>
-          <p className="text-lg font-mono bg-gray-100 p-2 rounded mb-6">
-            {applicationId}
+          <p className="text-gray-700 mb-4">
+            ご応募ありがとうございます。
           </p>
-          <p className="text-sm text-gray-600">
-            選考結果はLINEメッセージにてご連絡します。
+          <p className="text-sm text-gray-600 mb-6">
+            選考結果はLINEメッセージにてご連絡いたします。
+            <br />
+            しばらくお待ちください。
           </p>
+          <button
+            onClick={() => {
+              liff.closeWindow();
+            }}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            閉じる
+          </button>
         </div>
       </div>
     );
@@ -388,7 +457,17 @@ export default function ApplyPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold mb-6">出店応募フォーム</h1>
+        <h1 className="text-2xl font-bold mb-6">
+          {isEditMode ? '応募内容の編集' : '出店応募フォーム'}
+        </h1>
+
+        {isEditMode && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-800 text-sm">
+              応募内容を編集できます。変更を保存する場合は下の「更新する」ボタンを押してください。
+            </p>
+          </div>
+        )}
 
         {errors.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -632,13 +711,33 @@ export default function ApplyPage() {
 
           {/* 送信ボタン */}
           <div className="pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? '送信中...' : '応募する'}
-            </button>
+            {isEditMode ? (
+              <div className="space-y-3">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? '更新中...' : '更新する'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isSubmitting}
+                  className="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  キャンセル
+                </button>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? '送信中...' : '応募する'}
+              </button>
+            )}
           </div>
         </form>
       </div>
