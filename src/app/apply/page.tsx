@@ -160,7 +160,7 @@ export default function ApplyPage() {
       phone: existingApplication.phone,
       baseArea: existingApplication.base_area,
       startedYm: existingApplication.started_ym,
-      categories: existingApplication.categories,
+      categories: existingApplication.categories as Category[],
       description: existingApplication.description,
       urls: existingApplication.urls.length > 0 ? existingApplication.urls : [''],
       powerNeeded: existingApplication.power_needed,
