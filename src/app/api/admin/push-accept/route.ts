@@ -4,13 +4,26 @@ import { requireAdmin } from '@/lib/auth';
 import { sendPushMessage } from '@/lib/line';
 import { ApiResponse, PushAcceptRequest } from '@/types';
 
-const ACCEPT_MESSAGE = `【出店のご案内】
-このたびはご応募ありがとうございます。
+const ACCEPT_MESSAGE = `🎉【出店決定のお知らせ】🎉
 
-選考の結果、出店をお願いしたくご連絡しました。
+このたびはご応募ありがとうございます！
+
+選考の結果、出店をお願いしたくご連絡しました✨
+
+━━━━━━━━━━━━━━━━
+📋 今後の流れ
+━━━━━━━━━━━━━━━━
 
 詳細（搬入・当日の案内・出店料等）を追ってご案内します。
-まずは本メッセージに一言ご返信ください。`;
+
+⚠️ 重要 ⚠️
+このメッセージを確認されましたら、必ず一言ご返信ください。
+
+例：「確認しました」「よろしくお願いします」など
+
+ご返信をもって、出店の意思確認とさせていただきます。
+
+よろしくお願いいたします🙇‍♀️`;
 
 export async function POST(request: NextRequest) {
   // 認証チェック
